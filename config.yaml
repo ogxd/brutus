@@ -1,0 +1,5 @@
+websites:
+  - url: https://www.amazon.fr/PlayStation-%C3%89dition-Standard-DualSense-Couleur/dp/B08H93ZRK9/ref=sr_1_1?__mk_fr_FR=%C3%85M%C3%85%C5%BD%C3%95%C3%91&keywords=ps5&qid=1637790104&sr=8-1
+    excludes: Actuellement indisponible.
+settings:
+  delay: 5
