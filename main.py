@@ -1,23 +1,39 @@
-import os, subprocess, yaml, time
+import os, subprocess, yaml, time, asyncio
 
-url_amazon = "https://www.amazon.fr/PlayStation-%C3%89dition-Standard-DualSense-Couleur/dp/B08H93ZRK9/ref=sr_1_1?__mk_fr_FR=%C3%85M%C3%85%C5%BD%C3%95%C3%91&keywords=ps5&qid=1637790104&sr=8-1"
-command = "\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" --headless --disable-gpu --dump-dom" #--print-to-pdf
+def alert(website):
+  print(f"ALERT!!! -> {website['url']}")
 
-#cake = subprocess.check_output(f"{command} {url_amazon}").read()
+async def scrape(website):
+  while (True):
+    content = subprocess.run([
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+      "--headless",
+      "--disable-gpu",
+      "--dump-dom",
+      website['url']], capture_output=True, text=True).stdout
 
-config = {}
+    if 'excludes' in website and website['excludes'] not in content:
+      alert(website)
+      return
 
-with open("config.yaml") as file:
-  config = yaml.load(file, Loader=yaml.FullLoader)
+    if 'includes' in website and website['includes'] in content:
+      alert(website)
+      return
 
-while (True):
-  cake = subprocess.run([
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "--headless",
-    "--disable-gpu",
-    "--dump-dom",
-    config['websites'][0]['url']], capture_output=True, text=True).stdout
+    await asyncio.sleep(5 if 'delay' not in website else website['delay'])
 
-  time.sleep(int(config['settings']['delay']))
+async def main():
+  config = {}
 
-  print(config['websites'][0]['excludes'] in cake)
+  with open("config.yaml") as file:
+    config = yaml.load(file, Loader=yaml.FullLoader)
+
+  tasks = []
+
+  for website in config['websites']:
+    tasks.append(scrape(website))
+
+  for task in tasks:
+    await task
+
+asyncio.run(main())
