@@ -9,7 +9,7 @@ namespace brutus
 {
     class Program
     {
-        private const string TOKEN = "XXX";
+        private static string BRUTUS_TOKEN = Environment.GetEnvironmentVariable("BRUTUS_TOKEN");
         private const ulong NOTIFICATION_CHANNEL_ID = 913921054177624188;
 
         private static ConcurrentDictionary<string, Job> jobs;
@@ -29,7 +29,7 @@ namespace brutus
 
             Console.WriteLine("login in");
 
-            await client.LoginAsync(TokenType.Bot, TOKEN);
+            await client.LoginAsync(TokenType.Bot, BRUTUS_TOKEN);
 
             Console.WriteLine("starting");
 
@@ -55,7 +55,7 @@ namespace brutus
                 if (split.Length < 2)
                     throw new Exception("brutus requires at least 1 argument");
 
-                switch (split[1])
+                switch (split[1].ToLower())
                 {
                     case "status":
                         await message.Channel.SendMessageAsync("I'm alive! ✨");
@@ -78,7 +78,7 @@ namespace brutus
 
                         Job job;
 
-                        switch (split[2])
+                        switch (split[2].ToLower())
                         {
                             case "add":
                                 jobs.TryAdd(split[3], job = new Job());
@@ -91,7 +91,7 @@ namespace brutus
 
                             case "set":
                                 jobs.TryGetValue(split[3], out job);
-                                switch (split[4])
+                                switch (split[4].ToLower())
                                 {
                                     case "url":
                                         job.url = split[4];
@@ -118,6 +118,8 @@ namespace brutus
                                 job.Start();
                                 break;
                         }
+
+                        await message.Channel.SendMessageAsync("Done!");
                         break;
                 }
             }
