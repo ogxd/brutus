@@ -96,7 +96,7 @@ namespace brutus
                                 $"- Status: {(pair.Value.Paused ? "paused" : "running")}\n" +
                                 $"- Url: `{pair.Value.Url}`\n" +
                                 $"- Includes: `{pair.Value.Includes}`\n" +
-                                $"- Excludes: `{pair.Value.Exludes}`\n" +
+                                $"- Excludes: `{pair.Value.Exludes ?? " "}`\n" +
                                 $"- Delay: {pair.Value.Delay} ms\n" +
                                 $"- Last Invokation: {pair.Value.LastInvokation}\n" +
                                 $"- Last Error: `{pair.Value.LastError?.ToString() ?? "no error"}`".TruncateIfTooLong(1900));
@@ -129,16 +129,16 @@ namespace brutus
                                 switch (split[4].ToLower())
                                 {
                                     case "url":
-                                        job.Url = split[5];
+                                        job.Url = value;
                                         break;
                                     case "includes":
-                                        job.Includes = split[5];
+                                        job.Includes = value;
                                         break;
                                     case "excludes":
-                                        job.Exludes = split[5];
+                                        job.Exludes = value;
                                         break;
                                     case "delay":
-                                        job.Delay = int.Parse(split[5]);
+                                        job.Delay = int.Parse(value);
                                         break;
                                 }
                                 break;
