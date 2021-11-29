@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -17,6 +18,14 @@ namespace brutus
 
         static void Main(string[] args)
         {
+            //string url = "https://www.amazon.fr/PlayStation-%C3%89dition-Standard-DualSense-Couleur/dp/B08H93ZRK9";
+            //var _client = new WebClient();
+            //var content = _client.DownloadString(url);
+
+            //Console.WriteLine(content);
+
+            //Console.ReadKey();
+
             Console.WriteLine("starting");
             Run().Wait();
         }
@@ -27,7 +36,7 @@ namespace brutus
 
             client = new DiscordSocketClient();
 
-            Console.WriteLine("login in");
+            Console.WriteLine($"login in (Token={BRUTUS_TOKEN})");
 
             await client.LoginAsync(TokenType.Bot, BRUTUS_TOKEN);
 
@@ -68,7 +77,7 @@ namespace brutus
                         }
                         foreach (var pair in jobs)
                         {
-                            await message.Channel.SendMessageAsync($"Job '{pair.Key}': {(pair.Value.Paused ? "paused" : "running")} {pair.Value.LastError?.ToString()}");
+                            await message.Channel.SendMessageAsync($"Job '{pair.Key}'\nStatus: {(pair.Value.Paused ? "paused" : "running")}\nUrl: {pair.Value.url}\nLast Invokation: {pair.Value.LastInvokation}\nLast Error: {pair.Value.LastError?.ToString()}".TruncateIfTooLong(1900));
                         }
                         break;
 
@@ -94,16 +103,16 @@ namespace brutus
                                 switch (split[4].ToLower())
                                 {
                                     case "url":
-                                        job.url = split[4];
+                                        job.url = split[5];
                                         break;
                                     case "includes":
-                                        job.includes = split[4];
+                                        job.includes = split[5];
                                         break;
                                     case "excludes":
-                                        job.exludes = split[4];
+                                        job.exludes = split[5];
                                         break;
                                     case "delay":
-                                        job.delay = int.Parse(split[4]);
+                                        job.delay = int.Parse(split[5]);
                                         break;
                                 }
                                 break;
@@ -132,7 +141,17 @@ namespace brutus
         private static void Job_Triggered(Job job)
         {
             var channel = client.GetChannel(NOTIFICATION_CHANNEL_ID) as IMessageChannel;
-            channel.SendMessageAsync("ALERT! => " + job.url);
+            channel.SendMessageAsync("ALERT! => " + job.url.TruncateIfTooLong(1000));
+        }
+    }
+
+    public static class Extensions
+    {
+        public static string TruncateIfTooLong(this string str, int THRESHOLD)
+        {
+            if (!string.IsNullOrEmpty(str) && str.Length > THRESHOLD)
+                return str.Substring(0, THRESHOLD) + "...";
+            return str;
         }
     }
 }

@@ -14,7 +14,7 @@ namespace brutus
         public event Action<Job> Triggered;
         public Exception LastError { get; private set; }
         public bool Paused { get; private set; }
-
+        public DateTime LastInvokation { get; private set; }
 
         private CancellationTokenSource _cts;
         private WebClient _client;
@@ -33,7 +33,7 @@ namespace brutus
 
             _cts = new CancellationTokenSource();
 
-            StartInternalAsync();
+            var task = StartInternalAsync();
         }
 
         private async Task StartInternalAsync()
@@ -42,7 +42,8 @@ namespace brutus
             {
                 try
                 {
-                    var content = await _client.DownloadStringTaskAsync(new Uri(url));
+                    LastInvokation = DateTime.Now;
+                    var content = await _client.DownloadStringTaskAsync(url);
 
                     if (!string.IsNullOrEmpty(includes) && !content.Contains(includes))
                     {
@@ -55,6 +56,8 @@ namespace brutus
                         Pause();
                         Triggered?.Invoke(this);
                     }
+
+                    LastError = null;
                 }
                 catch(Exception err)
                 {
