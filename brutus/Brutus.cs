@@ -8,7 +8,12 @@ using Microsoft.Extensions.Hosting;
 
 namespace brutus
 {
-    public class Brutus : IHostedService
+    public interface IBrutus : IHostedService
+    {
+        public int GetJobsCount { get; }
+    }
+
+    public class Brutus : IBrutus
     {
         private static string BRUTUS_TOKEN = Environment.GetEnvironmentVariable("BRUTUS_TOKEN");
 
@@ -120,7 +125,7 @@ namespace brutus
                             case "set":
                                 jobs.TryGetValue(jobName, out job);
                                 // Recombine value
-                                var value = string.Join(' ', split[5..-1]);
+                                var value = string.Join(' ', split[5..(split.Length - 1)]);
                                 switch (split[4].ToLower())
                                 {
                                     case "url":

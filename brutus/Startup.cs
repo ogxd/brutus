@@ -17,13 +17,17 @@ namespace brutus
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddHostedService<Brutus>();
+            services.AddSingleton<Brutus>();
+            services.AddHostedService(provider => provider.GetService<Brutus>());
+
             services.AddControllers();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseDeveloperExceptionPage();
+
             app.UseRouting();
 
             app.UseAuthorization();

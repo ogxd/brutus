@@ -14,9 +14,12 @@ namespace brutus.Controllers
         }
 
         [HttpGet("jobs")]
-        public ContentResult Get()
+        public IActionResult Get()
         {
             return Content("Current jobs: " + _brutus.GetJobsCount);
         }
+
+        [Route("/error")]
+        public IActionResult Error() => Problem();
     }
 }
