@@ -92,14 +92,14 @@ namespace brutus
                         }
                         foreach (var pair in jobs)
                         {
-                            await message.Channel.SendMessageAsync($"**Job '{pair.Key.Split('§')[1]}**'\n" +
-                                $"- Status: {(pair.Value.Paused ? "paused" : "running")}\n" +
-                                $"- Url: `{pair.Value.Url}`\n" +
-                                $"- Includes: `{pair.Value.Includes}`\n" +
-                                $"- Excludes: `{pair.Value.Exludes ?? " "}`\n" +
-                                $"- Delay: {pair.Value.Delay} ms\n" +
-                                $"- Last Invokation: {pair.Value.LastInvokation}\n" +
-                                $"- Last Error: `{pair.Value.LastError?.ToString() ?? "no error"}`".TruncateIfTooLong(1900));
+                            await message.Channel.SendMessageAsync($"**Job {pair.Key.Split('§')[1]}**\n" +
+                                $"- `Status: {(pair.Value.Paused ? "paused" : "running")}`\n" +
+                                $"- `Url: {pair.Value.Url}`\n" +
+                                $"- `Includes: {pair.Value.Includes}`\n" +
+                                $"- `Excludes: {pair.Value.Exludes}`\n" +
+                                $"- `Delay: {pair.Value.Delay} ms`\n" +
+                                $"- `Last Invokation: {pair.Value.LastInvokation}`\n" +
+                                $"- `Last Error: {pair.Value.LastError?.ToString() ?? "no error"}`".TruncateIfTooLong(1900));
                         }
                         break;
 
@@ -125,7 +125,7 @@ namespace brutus
                             case "set":
                                 jobs.TryGetValue(jobName, out job);
                                 // Recombine value
-                                var value = string.Join(' ', split[5..(split.Length - 1)]);
+                                var value = string.Join(' ', split[5..]);
                                 switch (split[4].ToLower())
                                 {
                                     case "url":
