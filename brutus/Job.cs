@@ -7,11 +7,13 @@ namespace brutus
 {
     public class Job
     {
-        public string url;
-        public string exludes;
-        public string includes;
-        public int delay = 5000;
+        public string Url { get; set; }
+        public string Exludes { get; set; }
+        public string Includes { get; set; }
+        public int Delay { get; set; } = 5000;
+
         public event Action<Job> Triggered;
+
         public Exception LastError { get; private set; }
         public bool Paused { get; private set; }
         public DateTime LastInvokation { get; private set; }
@@ -45,15 +47,15 @@ namespace brutus
                 try
                 {
                     LastInvokation = DateTime.Now;
-                    var content = await _client.DownloadStringTaskAsync(url);
+                    var content = await _client.DownloadStringTaskAsync(Url);
 
-                    if (!string.IsNullOrEmpty(includes) && !content.Contains(includes))
+                    if (!string.IsNullOrEmpty(Includes) && !content.Contains(Includes))
                     {
                         Pause();
                         Triggered?.Invoke(this);
                     }
 
-                    if (!string.IsNullOrEmpty(exludes) && content.Contains(exludes))
+                    if (!string.IsNullOrEmpty(Exludes) && content.Contains(Exludes))
                     {
                         Pause();
                         Triggered?.Invoke(this);
@@ -66,7 +68,7 @@ namespace brutus
                     LastError = err;
                 }
 
-                await Task.Delay(delay);
+                await Task.Delay(Delay);
             }
         }
 
