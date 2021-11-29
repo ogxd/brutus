@@ -15,12 +15,14 @@ namespace brutus
         public Exception LastError { get; private set; }
         public bool Paused { get; private set; }
         public DateTime LastInvokation { get; private set; }
+        public ulong ChannelId { get; private set; }
 
         private CancellationTokenSource _cts;
         private WebClient _client;
 
-        public Job()
+        public Job(ulong channelId)
         {
+            ChannelId = channelId;
             _client = new WebClient();
 
             Start();

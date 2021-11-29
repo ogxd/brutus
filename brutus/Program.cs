@@ -10,7 +10,6 @@ namespace brutus
     class Program
     {
         private static string BRUTUS_TOKEN = Environment.GetEnvironmentVariable("BRUTUS_TOKEN");
-        private const ulong NOTIFICATION_CHANNEL_ID = 913921054177624188;
 
         private static ConcurrentDictionary<string, Job> jobs;
         private static DiscordSocketClient client;
@@ -102,7 +101,7 @@ namespace brutus
                         switch (split[2].ToLower())
                         {
                             case "add":
-                                jobs.TryAdd(jobName, job = new Job());
+                                jobs.TryAdd(jobName, job = new Job(message.Channel.Id));
                                 job.Triggered += Job_Triggered;
                                 break;
 
@@ -154,7 +153,7 @@ namespace brutus
 
         private static void Job_Triggered(Job job)
         {
-            var channel = client.GetChannel(NOTIFICATION_CHANNEL_ID) as IMessageChannel;
+            var channel = client.GetChannel(job.ChannelId) as IMessageChannel;
             channel.SendMessageAsync("🚨 ALERT 🚨\n" + job.url.TruncateIfTooLong(1900));
         }
     }
