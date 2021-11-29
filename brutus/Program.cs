@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -18,14 +17,6 @@ namespace brutus
 
         static void Main(string[] args)
         {
-            //string url = "https://www.amazon.fr/PlayStation-%C3%89dition-Standard-DualSense-Couleur/dp/B08H93ZRK9";
-            //var _client = new WebClient();
-            //var content = _client.DownloadString(url);
-
-            //Console.WriteLine(content);
-
-            //Console.ReadKey();
-
             Console.WriteLine("starting");
             Run().Wait();
         }
@@ -70,14 +61,33 @@ namespace brutus
                         await message.Channel.SendMessageAsync("I'm alive! ✨");
                         break;
 
+                    case "help":
+                        await message.Channel.SendMessageAsync($"**Here are some commands:**");
+                        await message.Channel.SendMessageAsync($"`!brutus status` *check brutus status*");
+                        await message.Channel.SendMessageAsync($"`!brutus jobs` *check brutus registered jobs*");
+                        await message.Channel.SendMessageAsync($"`!brutus job add MY_JOB` *add and start a new job*");
+                        await message.Channel.SendMessageAsync($"`!brutus job remove MY_JOB` *removes a job*");
+                        await message.Channel.SendMessageAsync($"`!brutus job set MY_JOB url http://google.fr` *changes the url of a job*");
+                        await message.Channel.SendMessageAsync($"`!brutus job set MY_JOB includes MY EXPRESSION` *changes the includes check of a job*");
+                        await message.Channel.SendMessageAsync($"`!brutus job pause MY_JOB` *pauses a job*");
+                        await message.Channel.SendMessageAsync($"`!brutus job start MY_JOB` *start a paused job*");
+                        break;
+
                     case "jobs":
                         if (jobs.Count == 0)
                         {
-                            await message.Channel.SendMessageAsync($"There are no jobs running. Add a job with !brutus job add MY_JOB_NAME (no spaces)");
+                            await message.Channel.SendMessageAsync($"There are no jobs running. Add a job with `!brutus job add MY_JOB_NAME` (no spaces)");
                         }
                         foreach (var pair in jobs)
                         {
-                            await message.Channel.SendMessageAsync($"Job '{pair.Key}'\nStatus: {(pair.Value.Paused ? "paused" : "running")}\nUrl: {pair.Value.url}\nLast Invokation: {pair.Value.LastInvokation}\nLast Error: {pair.Value.LastError?.ToString()}".TruncateIfTooLong(1900));
+                            await message.Channel.SendMessageAsync($"**Job '{pair.Key.Split('§')[1]}**'\n" +
+                                $"- Status: {(pair.Value.Paused ? "paused" : "running")}\n" +
+                                $"- Url: `{pair.Value.url}`\n" +
+                                $"- Includes: `{pair.Value.includes}`\n" +
+                                $"- Excludes: `{pair.Value.exludes}`\n" +
+                                $"- Delay: {pair.Value.delay} ms\n" +
+                                $"- Last Invokation: {pair.Value.LastInvokation}\n" +
+                                $"- Last Error: `{pair.Value.LastError?.ToString() ?? "no error"}`".TruncateIfTooLong(1900));
                         }
                         break;
 
@@ -87,19 +97,23 @@ namespace brutus
 
                         Job job;
 
+                        string jobName = message.Channel.Id + "§" + split[3];
+
                         switch (split[2].ToLower())
                         {
                             case "add":
-                                jobs.TryAdd(split[3], job = new Job());
+                                jobs.TryAdd(jobName, job = new Job());
                                 job.Triggered += Job_Triggered;
                                 break;
 
                             case "remove":
-                                jobs.TryRemove(split[3], out job);
+                                jobs.TryRemove(jobName, out job);
                                 break;
 
                             case "set":
-                                jobs.TryGetValue(split[3], out job);
+                                jobs.TryGetValue(jobName, out job);
+                                // Recombine value
+                                var value = string.Join(' ', split[5..-1]);
                                 switch (split[4].ToLower())
                                 {
                                     case "url":
@@ -118,12 +132,12 @@ namespace brutus
                                 break;
 
                             case "pause":
-                                jobs.TryGetValue(split[3], out job);
+                                jobs.TryGetValue(jobName, out job);
                                 job.Pause();
                                 break;
 
                             case "start":
-                                jobs.TryGetValue(split[3], out job);
+                                jobs.TryGetValue(jobName, out job);
                                 job.Start();
                                 break;
                         }
@@ -141,7 +155,7 @@ namespace brutus
         private static void Job_Triggered(Job job)
         {
             var channel = client.GetChannel(NOTIFICATION_CHANNEL_ID) as IMessageChannel;
-            channel.SendMessageAsync("ALERT! => " + job.url.TruncateIfTooLong(1000));
+            channel.SendMessageAsync("🚨 ALERT 🚨\n" + job.url.TruncateIfTooLong(1900));
         }
     }
 
