@@ -2,6 +2,7 @@
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using YamlDotNet.Serialization;
 
 namespace brutus
 {
@@ -18,18 +19,26 @@ namespace brutus
         public bool Paused { get; private set; }
         public ulong ChannelId { get; private set; }
 
+        [YamlIgnore]
         public Exception LastError { get; private set; }
+
+        [YamlIgnore]
         public DateTime LastInvokation { get; private set; }
 
 
         private CancellationTokenSource _cts;
         private WebClient _client;
 
+        public Job()
+        {
+            _client = new WebClient();
+            Start();
+        }
+
         public Job(ulong channelId)
         {
             ChannelId = channelId;
             _client = new WebClient();
-
             Start();
         }
 
