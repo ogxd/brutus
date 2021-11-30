@@ -13,13 +13,13 @@ namespace brutus.Controllers
             _brutus = brutus;
         }
 
-        [HttpGet("jobs")]
+        [HttpGet]
         public IActionResult Get()
         {
-            return Content("Current jobs: " + _brutus.GetJobsCount);
+            return Content("Alive 🤠");
         }
 
-        [Route("/error")]
+        [Route("error")]
         public IActionResult Error() => Problem();
     }
 }

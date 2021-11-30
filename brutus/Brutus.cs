@@ -1,5 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -8,50 +12,45 @@ using Microsoft.Extensions.Hosting;
 
 namespace brutus
 {
-    public interface IBrutus : IHostedService
-    {
-        public int GetJobsCount { get; }
-    }
-
-    public class Brutus : IBrutus
+    public class Brutus : IHostedService
     {
         private static string BRUTUS_TOKEN = Environment.GetEnvironmentVariable("BRUTUS_TOKEN");
 
-        private ConcurrentDictionary<string, Job> jobs;
-        private DiscordSocketClient client;
+        private ConcurrentDictionary<string, Job> _jobs;
+        private DiscordSocketClient _client;
 
         public Brutus()
         {
 
         }
 
-        public int GetJobsCount => jobs?.Count ?? 0;
+        public IEnumerable<(string, Job)> Jobs => _jobs.Select(x => (x.Key, x.Value));
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             Console.WriteLine("starting");
 
-            jobs = new ConcurrentDictionary<string, Job>();
+            _jobs = new ConcurrentDictionary<string, Job>();
 
-            client = new DiscordSocketClient();
+            _client = new DiscordSocketClient();
 
             Console.WriteLine($"login in (Token={BRUTUS_TOKEN})");
 
-            await client.LoginAsync(TokenType.Bot, BRUTUS_TOKEN);
+            await _client.LoginAsync(TokenType.Bot, BRUTUS_TOKEN);
 
             Console.WriteLine("starting");
 
-            await client.StartAsync();
+            await _client.StartAsync();
 
             Console.WriteLine("running !");
 
-            client.MessageReceived += OnMessageReceived;
+            _client.MessageReceived += OnMessageReceived;
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            await client.StopAsync();
-            client.Dispose();
+            await _client.StopAsync();
+            _client.Dispose();
         }
 
         private async Task OnMessageReceived(SocketMessage message)
@@ -86,11 +85,11 @@ namespace brutus
                         break;
 
                     case "jobs":
-                        if (jobs.Count == 0)
+                        if (_jobs.Count == 0)
                         {
                             await message.Channel.SendMessageAsync($"There are no jobs running. Add a job with `!brutus job add MY_JOB_NAME` (no spaces)");
                         }
-                        foreach (var pair in jobs)
+                        foreach (var pair in _jobs)
                         {
                             await message.Channel.SendMessageAsync($"**Job {pair.Key.Split('§')[1]}**\n" +
                                 $"- `Status: {(pair.Value.Paused ? "paused" : "running")}`\n" +
@@ -109,21 +108,22 @@ namespace brutus
 
                         Job job;
 
-                        string jobName = message.Channel.Id + "§" + split[3];
+                        string jobName = split[3];
+                        string fullJobName = message.Channel.Id + "§" + jobName;
 
                         switch (split[2].ToLower())
                         {
                             case "add":
-                                jobs.TryAdd(jobName, job = new Job(message.Channel.Id));
+                                _jobs.TryAdd(fullJobName, job = new Job(message.Channel.Id));
                                 job.Triggered += Job_Triggered;
                                 break;
 
                             case "remove":
-                                jobs.TryRemove(jobName, out job);
+                                _jobs.TryRemove(fullJobName, out job);
                                 break;
 
                             case "set":
-                                jobs.TryGetValue(jobName, out job);
+                                _jobs.TryGetValue(fullJobName, out job);
                                 // Recombine value
                                 var value = string.Join(' ', split[5..]);
                                 switch (split[4].ToLower())
@@ -144,12 +144,23 @@ namespace brutus
                                 break;
 
                             case "pause":
-                                jobs.TryGetValue(jobName, out job);
+                                _jobs.TryGetValue(fullJobName, out job);
                                 job.Pause();
                                 break;
 
                             case "start":
-                                jobs.TryGetValue(jobName, out job);
+                                _jobs.TryGetValue(fullJobName, out job);
+                                job.Start();
+                                break;
+
+                            case "dump":
+                                _jobs.TryGetValue(fullJobName, out job);
+                                job.RequestDump(async (content) =>
+                                {
+                                    var bytes = Encoding.UTF8.GetBytes(content);
+                                    MemoryStream ms = new MemoryStream(bytes);
+                                    await message.Channel.SendFileAsync(ms, $"{jobName}_dump.txt");
+                                });
                                 job.Start();
                                 break;
                         }
@@ -166,7 +177,7 @@ namespace brutus
 
         private void Job_Triggered(Job job)
         {
-            var channel = client.GetChannel(job.ChannelId) as IMessageChannel;
+            var channel = _client.GetChannel(job.ChannelId) as IMessageChannel;
             channel.SendMessageAsync("🚨 ALERT 🚨\n" + job.Url.TruncateIfTooLong(1900));
         }
     }

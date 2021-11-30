@@ -12,12 +12,15 @@ namespace brutus
         public string Includes { get; set; }
         public int Delay { get; set; } = 5000;
 
+
         public event Action<Job> Triggered;
 
-        public Exception LastError { get; private set; }
         public bool Paused { get; private set; }
-        public DateTime LastInvokation { get; private set; }
         public ulong ChannelId { get; private set; }
+
+        public Exception LastError { get; private set; }
+        public DateTime LastInvokation { get; private set; }
+
 
         private CancellationTokenSource _cts;
         private WebClient _client;
@@ -49,6 +52,12 @@ namespace brutus
                     LastInvokation = DateTime.Now;
                     var content = await _client.DownloadStringTaskAsync(Url);
 
+                    if (_dumpAsyncCallback != null && !string.IsNullOrEmpty(content))
+                    {
+                        await _dumpAsyncCallback(content);
+                        _dumpAsyncCallback = null;
+                    }
+
                     if (!string.IsNullOrEmpty(Includes) && !content.Contains(Includes))
                     {
                         Pause();
@@ -70,6 +79,13 @@ namespace brutus
 
                 await Task.Delay(Delay);
             }
+        }
+
+        private Func<string, Task> _dumpAsyncCallback;
+
+        public void RequestDump(Func<string, Task> asyncCallback)
+        {
+            _dumpAsyncCallback = asyncCallback;
         }
 
         public void Pause()
