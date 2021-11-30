@@ -3,18 +3,22 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Hosting;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace brutus
 {
     public class Brutus : IHostedService
     {
         private static string BRUTUS_TOKEN = Environment.GetEnvironmentVariable("BRUTUS_TOKEN");
+        private static Version VERSION = new Version(1, 0, 0);
 
         private ConcurrentDictionary<string, Job> _jobs;
         private DiscordSocketClient _client;
@@ -72,6 +76,10 @@ namespace brutus
                         await message.Channel.SendMessageAsync("I'm alive! ✨");
                         break;
 
+                    case "version":
+                        await message.Channel.SendMessageAsync($"{VERSION}");
+                        break;
+
                     case "help":
                         await message.Channel.SendMessageAsync($"**Here are some commands:**");
                         await message.Channel.SendMessageAsync($"`!brutus status` *check brutus status*");
@@ -84,6 +92,30 @@ namespace brutus
                         await message.Channel.SendMessageAsync($"`!brutus job start MY_JOB` *start a paused job*");
                         break;
 
+                    case "save":
+                        var serializer = new SerializerBuilder()
+                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                            .Build();
+                        string channelIdStr = message.Channel.Id.ToString();
+                        string yaml = serializer.Serialize(_jobs.Where(x => x.Key.Split('§')[0] == channelIdStr).ToDictionary(x => x.Key, x => x.Value));
+                        var bytes = Encoding.UTF8.GetBytes(yaml);
+                        MemoryStream ms = new MemoryStream(bytes);
+                        await message.Channel.SendFileAsync(ms, $"{channelIdStr}_save.yaml");
+                        break;
+
+                    case "load":
+                        var attachments = message.Attachments;
+                        WebClient myWebClient = new WebClient();
+                        string url = attachments.ElementAt(0).Url;
+                        byte[] buffer = myWebClient.DownloadData(url);
+                        string download = Encoding.UTF8.GetString(buffer);
+                        var deserializer = new DeserializerBuilder()
+                            .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                            .Build();
+                        var obj = deserializer.Deserialize<Dictionary<string, Job>>(download);
+                        _jobs = new ConcurrentDictionary<string, Job>(obj.Select(x => new KeyValuePair<string, Job>(message.Channel.Id + '§' + x.Key, x.Value)));
+                        break;
+
                     case "jobs":
                         if (_jobs.Count == 0)
                         {
@@ -92,13 +124,13 @@ namespace brutus
                         foreach (var pair in _jobs)
                         {
                             await message.Channel.SendMessageAsync($"**Job {pair.Key.Split('§')[1]}**\n" +
-                                $"- `Status: {(pair.Value.Paused ? "paused" : "running")}`\n" +
-                                $"- `Url: {pair.Value.Url}`\n" +
-                                $"- `Includes: {pair.Value.Includes}`\n" +
-                                $"- `Excludes: {pair.Value.Exludes}`\n" +
-                                $"- `Delay: {pair.Value.Delay} ms`\n" +
-                                $"- `Last Invokation: {pair.Value.LastInvokation}`\n" +
-                                $"- `Last Error: {pair.Value.LastError?.ToString() ?? "no error"}`".TruncateIfTooLong(1900));
+                                $"```- Status: {(pair.Value.Paused ? "paused" : "running")}\n" +
+                                $"- Url: {pair.Value.Url}\n" +
+                                $"- Includes: {pair.Value.Includes}\n" +
+                                $"- Excludes: {pair.Value.Exludes}\n" +
+                                $"- Delay: {pair.Value.Delay} ms\n" +
+                                $"- Last Invokation: {pair.Value.LastInvokation}\n" +
+                                $"- Last Error: {pair.Value.LastError?.ToString() ?? "no error"}```".TruncateIfTooLong(1900));
                         }
                         break;
 
@@ -125,20 +157,19 @@ namespace brutus
                             case "set":
                                 _jobs.TryGetValue(fullJobName, out job);
                                 // Recombine value
-                                var value = string.Join(' ', split[5..]);
                                 switch (split[4].ToLower())
                                 {
                                     case "url":
-                                        job.Url = value;
+                                        job.Url = split[5];
                                         break;
                                     case "includes":
-                                        job.Includes = value;
+                                        job.Includes = string.Join(' ', split[5..]); ;
                                         break;
                                     case "excludes":
-                                        job.Exludes = value;
+                                        job.Exludes = string.Join(' ', split[5..]); ;
                                         break;
                                     case "delay":
-                                        job.Delay = int.Parse(value);
+                                        job.Delay = int.Parse(split[5]);
                                         break;
                                 }
                                 break;
@@ -161,7 +192,6 @@ namespace brutus
                                     MemoryStream ms = new MemoryStream(bytes);
                                     await message.Channel.SendFileAsync(ms, $"{jobName}_dump.txt");
                                 });
-                                job.Start();
                                 break;
                         }
 
@@ -171,7 +201,7 @@ namespace brutus
             }
             catch (Exception ex)
             {
-                await message.Channel.SendMessageAsync("Command failed: " + ex);
+                await message.Channel.SendMessageAsync($"Command failed:\n`{ex}`".TruncateIfTooLong(1900));
             }
         }
 
