@@ -115,9 +115,11 @@ namespace brutus
                         var obj = deserializer.Deserialize<Dictionary<string, Job>>(download);
                         foreach (var pair in obj)
                         {
+                            await message.Channel.SendMessageAsync($"key: {pair.Key}, url: {pair.Value.Url}");
                             pair.Value.ChannelId = message.Channel.Id;
                         }
                         _jobs = new ConcurrentDictionary<string, Job>(obj.Select(x => new KeyValuePair<string, Job>(message.Channel.Id + '§' + x.Key, x.Value)));
+                        await message.Channel.SendMessageAsync("Loaded!");
                         break;
 
                     case "jobs":
