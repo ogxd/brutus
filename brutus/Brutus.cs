@@ -118,7 +118,10 @@ namespace brutus
                             await message.Channel.SendMessageAsync($"key: {pair.Key}, url: {pair.Value.Url}");
                             pair.Value.ChannelId = message.Channel.Id;
                         }
-                        _jobs = new ConcurrentDictionary<string, Job>(obj.Select(x => new KeyValuePair<string, Job>(message.Channel.Id + '§' + x.Key, x.Value)));
+
+                        await message.Channel.SendMessageAsync($"key: {message.Channel.Id + "§" + "lala"}"); // Debug
+
+                        _jobs = new ConcurrentDictionary<string, Job>(obj.Select(x => new KeyValuePair<string, Job>(message.Channel.Id + "§" + x.Key, x.Value)));
                         await message.Channel.SendMessageAsync("Loaded!");
                         break;
 
@@ -129,6 +132,7 @@ namespace brutus
                         }
                         foreach (var pair in _jobs)
                         {
+                            await message.Channel.SendMessageAsync(pair.Key); // Debug
                             await message.Channel.SendMessageAsync($"**Job {pair.Key.Split('§')[1]}**\n" +
                                 $"```- Status: {(pair.Value.Paused ? "paused" : "running")}\n" +
                                 $"- Url: {pair.Value.Url}\n" +
