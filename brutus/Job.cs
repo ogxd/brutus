@@ -73,13 +73,15 @@ namespace brutus
                         _dumpAsyncCallback = null;
                     }
 
-                    if (!string.IsNullOrEmpty(Includes) && !content.Contains(Includes))
+                    content = content.ToLowerInvariant();
+
+                    if (!string.IsNullOrEmpty(Includes) && !content.Contains(Includes.ToLowerInvariant()))
                     {
                         Pause();
                         Triggered?.Invoke(this);
                     }
 
-                    if (!string.IsNullOrEmpty(Exludes) && content.Contains(Exludes))
+                    if (!string.IsNullOrEmpty(Exludes) && content.Contains(Exludes.ToLowerInvariant()))
                     {
                         Pause();
                         Triggered?.Invoke(this);
@@ -92,7 +94,7 @@ namespace brutus
                     LastError = err;
                 }
 
-                await Task.Delay(Delay);
+                await Task.Delay(Delay + Extensions.Random.Next(0, Delay) /* Act like it's not a bot */);
             }
         }
 

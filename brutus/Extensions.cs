@@ -1,4 +1,6 @@
-﻿namespace brutus
+﻿using System;
+
+namespace brutus
 {
     public static class Extensions
     {
@@ -9,5 +11,9 @@
 
             return str;
         }
+
+        private static Random _random = new Random();
+
+        public static Random Random => _random;
     }
 }
