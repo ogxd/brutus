@@ -16,11 +16,11 @@ namespace brutus
 
         public int Delay { get; set; } = 5000;
 
-        public ulong ChannelId { get; set; }
-
 
         public event Action<Job> Triggered;
 
+        [YamlIgnore]
+        public ulong ChannelId { get; set; }
 
         [YamlIgnore]
         public bool Paused { get; private set; }

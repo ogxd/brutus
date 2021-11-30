@@ -94,10 +94,10 @@ namespace brutus
 
                     case "save":
                         var serializer = new SerializerBuilder()
-                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                            //.WithNamingConvention(CamelCaseNamingConvention.Instance)
                             .Build();
                         string channelIdStr = message.Channel.Id.ToString();
-                        string yaml = serializer.Serialize(_jobs.Where(x => x.Key.Split('§')[0] == channelIdStr).ToDictionary(x => x.Key, x => x.Value));
+                        string yaml = serializer.Serialize(_jobs.Where(x => x.Key.Split('§')[0] == channelIdStr).ToDictionary(x => x.Key.Split('§')[1], x => x.Value));
                         var bytes = Encoding.UTF8.GetBytes(yaml);
                         MemoryStream ms = new MemoryStream(bytes);
                         await message.Channel.SendFileAsync(ms, $"{channelIdStr}_save.yaml");
@@ -110,9 +110,13 @@ namespace brutus
                         byte[] buffer = myWebClient.DownloadData(url);
                         string download = Encoding.UTF8.GetString(buffer);
                         var deserializer = new DeserializerBuilder()
-                            .WithNamingConvention(PascalCaseNamingConvention.Instance)
+                            //.WithNamingConvention(PascalCaseNamingConvention.Instance)
                             .Build();
                         var obj = deserializer.Deserialize<Dictionary<string, Job>>(download);
+                        foreach (var pair in obj)
+                        {
+                            pair.Value.ChannelId = message.Channel.Id;
+                        }
                         _jobs = new ConcurrentDictionary<string, Job>(obj.Select(x => new KeyValuePair<string, Job>(message.Channel.Id + '§' + x.Key, x.Value)));
                         break;
 
