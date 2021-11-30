@@ -9,15 +9,21 @@ namespace brutus
     public class Job
     {
         public string Url { get; set; }
+
         public string Exludes { get; set; }
+
         public string Includes { get; set; }
+
         public int Delay { get; set; } = 5000;
+
+        public ulong ChannelId { get; set; }
 
 
         public event Action<Job> Triggered;
 
+
+        [YamlIgnore]
         public bool Paused { get; private set; }
-        public ulong ChannelId { get; private set; }
 
         [YamlIgnore]
         public Exception LastError { get; private set; }
