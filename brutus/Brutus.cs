@@ -110,7 +110,7 @@ namespace brutus
                         byte[] buffer = myWebClient.DownloadData(url);
                         string download = Encoding.UTF8.GetString(buffer);
                         var deserializer = new DeserializerBuilder()
-                            .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                            .WithNamingConvention(PascalCaseNamingConvention.Instance)
                             .Build();
                         var obj = deserializer.Deserialize<Dictionary<string, Job>>(download);
                         _jobs = new ConcurrentDictionary<string, Job>(obj.Select(x => new KeyValuePair<string, Job>(message.Channel.Id + '§' + x.Key, x.Value)));
